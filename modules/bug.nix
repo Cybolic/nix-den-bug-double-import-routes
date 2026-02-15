@@ -20,7 +20,7 @@
   den.aspects.testing =
     { user, ... }@ctx:
     {
-      homeManager = { pkgs, ... }: { home.packages = if user.userName == "tux" then [ pkgs.vim ] else []; };
+      homeManager = { pkgs, ... }: { home.packages = [ pkgs.vim ]; };
     };
 
   # `nix-unit --flake .#.tests.systems`
@@ -40,6 +40,7 @@
   # See [Debugging Tips](https://den.oeiuwq.com/debugging.html)
   flake.den = den;
   # `nix eval .#.value`
+  # This doesn't show the bug
   flake.value =
     let
       aspect = den.aspects.testing {
@@ -47,8 +48,9 @@
         host.hostName = "fake";
       };
       modules = [
+        { _module.args = { pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux; }; }
         (aspect.resolve { class = "homeManager"; })
-        { options.home.packages = lib.mkOption { }; }
+        { options.home.packages = lib.mkOption { type = lib.types.listOf lib.types.package; default = []; }; }
       ];
       evaled = lib.evalModules { inherit modules; };
     in
